@@ -1,6 +1,6 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { stream } from "hono/streaming";
+import { stream } from "hono/streaming";  //[we can use express or any other server framework]
 import { Octokit } from "@octokit/core";
 import {
   createAckEvent,
@@ -11,6 +11,7 @@ import {
   prompt,
   verifyAndParseRequest,
 } from "@copilot-extensions/preview-sdk";
+import { createReferencesEvent } from "@copilot-extensions/preview-sdk";
 
 const app = new Hono();
 
@@ -46,6 +47,7 @@ app.post("/", async (c) => {
     return c.text(
       createErrorsEvent([
         {
+          //[using copilot sdk to create error event in chat]
           type: "agent",
           message: "No GitHub token provided in the request headers.",
           code: "MISSING_GITHUB_TOKEN",
@@ -74,6 +76,24 @@ app.post("/", async (c) => {
       stream.write(createTextEvent(`Hi ${user.data.login}! `));
 
       stream.write(createTextEvent(message.content));
+
+      stream.write(
+          createReferencesEvent([
+            {
+              id: "123",
+              type: "issue",
+              data: {
+                number: 123,
+              },
+              is_implicit: false,
+              metadata: {
+                display_name: "My issue",
+                display_icon: "issue-opened",
+                display_url: "https://github.com/polito/students-app/issues/424",
+            },}
+          ])
+        );
+
       stream.write(createDoneEvent());
     } catch (error) {
       stream.write(
